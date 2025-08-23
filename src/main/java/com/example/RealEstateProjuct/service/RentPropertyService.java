@@ -1,30 +1,36 @@
 package com.example.RealEstateProjuct.service;
 
-import com.example.RealEstateProjuct.dto.PropertyDTO;
-import com.example.RealEstateProjuct.model.RentProperty.RentProperty;
+import com.example.RealEstateProjuct.dto.RentDTO.RentPropertyDTO;
+
 
 import java.util.List;
 
 public interface RentPropertyService {
 
-    PropertyDTO createRentProperty(PropertyDTO propertyDTO);
+    // Create a new RentProperty
+    RentPropertyDTO createRentProperty(RentPropertyDTO rentPropertyDTO);
 
-    PropertyDTO getRentPropertyById(Long id);
+    // Get a RentProperty by ID
+    RentPropertyDTO getRentPropertyById(Long id);
 
-    List<PropertyDTO> getAllRentProperties();
+    // Get all RentProperties
+    List<RentPropertyDTO> getAllRentProperties();
 
-    PropertyDTO updateRentProperty(Long id, PropertyDTO propertyDTO);
+    // Update an existing RentProperty
+    RentPropertyDTO updateRentProperty(Long id, RentPropertyDTO rentPropertyDTO);
 
+    // Delete a RentProperty by ID
     void deleteRentProperty(Long id);
 
-    List<PropertyDTO> filterRentProperties(String category,
-                                           Double minPrice,
-                                           Double maxPrice,
-                                           String amenity,
-                                           String createdByRole,
-                                           String subtype,
-                                           Boolean verified,
-                                           String location,
-                                           String city);
+    // Filter RentProperties by multiple criteria
+    List<RentPropertyDTO> filterRentProperties(String category,
+                                               Double minPrice,
+                                               Double maxPrice,
+                                               String amenity,
+                                               String createdByRole,
+                                               String subtype,
+                                               Boolean verified,
+                                               String location,
+                                               String city);
 
 }

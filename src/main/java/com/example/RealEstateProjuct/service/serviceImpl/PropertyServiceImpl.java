@@ -274,6 +274,7 @@ public class PropertyServiceImpl implements PropertyService {
                 Image img = new Image();
                 img.setUrl(imgMap.get("url") != null ? imgMap.get("url").toString() : null);
                 img.setProperty(property);
+                img.setRentProperty(null);
                 return img;
             }).collect(Collectors.toList());
             property.setImages(images);

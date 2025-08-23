@@ -1,5 +1,6 @@
 package com.example.RealEstateProjuct.dto.RentDTO;
 
+import com.example.RealEstateProjuct.enumClass.RentProperty.RentPropertyType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,35 +22,24 @@ public class RentPropertyDTO {
     private String propertyType; // FLAT / PG / COMMERCIAL
 
     // Category info
-    private Long categoryId;
-    private String categoryName;
 
-    // Owner info (flat)
-    private Long ownerId;
-    private String ownerName;
-    private String ownerCompanyName;
-    private String ownerPhone;
+    private String category;
 
-    // Rent info
-    private Double amount;
-    private String currency;
-    private String type; // MONTHLY, YEARLY etc.
+    // Owner/Agent info
+    private Map<String, Object> agent; // id, name, companyName, phone
+
+
+    // Price info
+    private Map<String, Object> price; // amount, currency, type
 
     // Area info
-    private Double size;
-    private String unit; // SQFT / SQM etc.
+    private Map<String, Object> area; // size, unit
 
     private Integer bedrooms;
     private Integer bathrooms;
 
     // Address info
-    private String houseNo;
-    private String street;
-    private String locality;
-    private String city;
-    private String state;
-    private String country;
-    private String pincode;
+    private Map<String, Object> address; // houseNo, street, locality, city, state, country, pincode
 
     private boolean isVerified;
     private String featuresSummary;
@@ -59,6 +49,7 @@ public class RentPropertyDTO {
 
     // Amenities
     private List<Map<String, Object>> amenities; // id, name
+
     private Set<String> tags;
 
     // Type-specific details

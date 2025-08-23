@@ -13,4 +13,5 @@ public interface CategoryRepo extends JpaRepository<Category,Long> {
     // Add this method
     Optional<Category> findByName(String name);
 
+
 }

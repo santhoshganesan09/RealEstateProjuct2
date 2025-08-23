@@ -1,6 +1,7 @@
 package com.example.RealEstateProjuct.controller;
 
 import com.example.RealEstateProjuct.dto.PropertyDTO;
+import com.example.RealEstateProjuct.dto.RentDTO.RentPropertyDTO;
 import com.example.RealEstateProjuct.service.RentPropertyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,43 +16,45 @@ public class RentPropertyController {
 
     private final RentPropertyService rentPropertyService;
 
-    //  Create Rent Property
+    // Create a new RentProperty
     @PostMapping
-    public ResponseEntity<PropertyDTO> createRentProperty(@RequestBody PropertyDTO dto) {
-        return ResponseEntity.ok(rentPropertyService.createRentProperty(dto));
+    public ResponseEntity<RentPropertyDTO> createRentProperty(@RequestBody RentPropertyDTO dto) {
+        RentPropertyDTO created = rentPropertyService.createRentProperty(dto);
+        return ResponseEntity.ok(created);
     }
 
-    //  Get Rent Property by ID
+    // Get a RentProperty by ID
     @GetMapping("/{id}")
-    public ResponseEntity<PropertyDTO> getRentPropertyById(@PathVariable Long id) {
-        return ResponseEntity.ok(rentPropertyService.getRentPropertyById(id));
+    public ResponseEntity<RentPropertyDTO> getRentPropertyById(@PathVariable Long id) {
+        RentPropertyDTO property = rentPropertyService.getRentPropertyById(id);
+        return ResponseEntity.ok(property);
     }
 
-    //  Get All Rent Properties
+    // Get all RentProperties
     @GetMapping
-    public ResponseEntity<List<PropertyDTO>> getAllRentProperties() {
-        return ResponseEntity.ok(rentPropertyService.getAllRentProperties());
+    public ResponseEntity<List<RentPropertyDTO>> getAllRentProperties() {
+        List<RentPropertyDTO> properties = rentPropertyService.getAllRentProperties();
+        return ResponseEntity.ok(properties);
     }
 
-    //  Update Rent Property
+    // Update a RentProperty by ID
     @PutMapping("/{id}")
-    public ResponseEntity<PropertyDTO> updateRentProperty(
-            @PathVariable Long id,
-            @RequestBody PropertyDTO dto
-    ) {
-        return ResponseEntity.ok(rentPropertyService.updateRentProperty(id, dto));
+    public ResponseEntity<RentPropertyDTO> updateRentProperty(@PathVariable Long id,
+                                                              @RequestBody RentPropertyDTO dto) {
+        RentPropertyDTO updated = rentPropertyService.updateRentProperty(id, dto);
+        return ResponseEntity.ok(updated);
     }
 
-    //  Delete Rent Property
+    // Delete a RentProperty by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRentProperty(@PathVariable Long id) {
         rentPropertyService.deleteRentProperty(id);
         return ResponseEntity.noContent().build();
     }
 
-    //  Filter Rent Properties
+    // Filter RentProperties
     @GetMapping("/filter")
-    public ResponseEntity<List<PropertyDTO>> filterRentProperties(
+    public ResponseEntity<List<RentPropertyDTO>> filterRentProperties(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
@@ -62,11 +65,12 @@ public class RentPropertyController {
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String city
     ) {
-        return ResponseEntity.ok(
-                rentPropertyService.filterRentProperties(category, minPrice, maxPrice,
-                        amenity, createdByRole, subtype, verified, location, city)
+        List<RentPropertyDTO> filtered = rentPropertyService.filterRentProperties(
+                category, minPrice, maxPrice, amenity, createdByRole, subtype, verified, location, city
         );
+        return ResponseEntity.ok(filtered);
     }
+
 
 
 }

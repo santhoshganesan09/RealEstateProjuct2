@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -20,5 +21,5 @@ public class RentFlatDetailsDTO {
     private Integer floorNo;
     private Integer totalFloors;
     private Integer balconies;
-    private List<String> amenities; // flat-specific
+    private List<Map<String, Object>> amenities; // changed to accept id maps
 }

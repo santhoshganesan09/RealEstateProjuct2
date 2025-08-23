@@ -4,16 +4,15 @@ import com.example.RealEstateProjuct.enumClass.RentProperty.RentPeriod;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Embeddable
+@Setter
+@Getter
 public class RentPrice {
 
     private Double amount;

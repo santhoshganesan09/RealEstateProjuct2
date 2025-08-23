@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -22,5 +23,5 @@ public class RentPGDetailsDTO {
     private String furnishingStatus;
     private Integer totalCapacity;
     private Integer bedrooms;
-    private List<String> amenities;
+    private List<Map<String, Object>> amenities; // changed to accept id maps
 }
