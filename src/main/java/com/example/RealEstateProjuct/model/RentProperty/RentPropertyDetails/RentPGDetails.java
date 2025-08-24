@@ -1,21 +1,23 @@
 package com.example.RealEstateProjuct.model.RentProperty.RentPropertyDetails;
 
+import com.example.RealEstateProjuct.model.Amenity;
 import com.example.RealEstateProjuct.model.RentProperty.RentProperty;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "RentPGDetails")
+@Table(name = "rent_pg_details")
 public class RentPGDetails {
 
     @Id
@@ -30,16 +32,20 @@ public class RentPGDetails {
     private Integer totalCapacity;
     private Integer bedrooms;
 
-    @ElementCollection
-    @CollectionTable(name = "rent_pg_amenities", joinColumns = @JoinColumn(name = "pg_id"))
-    @Column(name = "amenity")
-    private List<String> amenities; // PG-specific amenities
-
 
     @OneToOne
     @JoinColumn(name = "property_id", nullable = false)
     @JsonIgnore
+    @JsonBackReference
     private RentProperty property;
 
+
+    @ManyToMany
+    @JoinTable(
+            name = "rent_pg_amenities",
+            joinColumns = @JoinColumn(name = "pg_id"),
+            inverseJoinColumns = @JoinColumn(name = "amenity_id")
+    )
+    private Set<Amenity> amenities = new HashSet<>();
 
 }

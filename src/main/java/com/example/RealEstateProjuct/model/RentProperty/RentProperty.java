@@ -6,11 +6,10 @@ import com.example.RealEstateProjuct.model.*;
 import com.example.RealEstateProjuct.model.RentProperty.RentPropertyDetails.RentCommercialDetails;
 import com.example.RealEstateProjuct.model.RentProperty.RentPropertyDetails.RentFlatDetails;
 import com.example.RealEstateProjuct.model.RentProperty.RentPropertyDetails.RentPGDetails;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -82,13 +81,44 @@ public class RentProperty {
 
     // --- Type-specific details ---
     @OneToOne(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonManagedReference
     private RentFlatDetails flatDetails;
 
-    @OneToOne(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
-    private RentPGDetails pgDetails;
+    public void setFlatDetails(RentFlatDetails flatDetails) {
+        this.flatDetails = flatDetails;
+        if (flatDetails != null) {
+            flatDetails.setProperty(this); // Lombok-generated setter
+        }
+    }
 
     @OneToOne(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonManagedReference
+    private RentPGDetails pgDetails;
+
+    public void setPgDetails(RentPGDetails pgDetails) {
+        this.pgDetails = pgDetails;
+        if (pgDetails != null) {
+            pgDetails.setProperty(this); // ✅ use 'setProperty', Lombok will generate it
+        }
+    }
+
+
+    @OneToOne(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnoreProperties("property") // avoids infinite recursion
     private RentCommercialDetails commercialDetails;
+
+    public void setCommercialDetails(RentCommercialDetails commercialDetails) {
+        this.commercialDetails = commercialDetails;
+        if (commercialDetails != null) {
+            commercialDetails.setProperty(this); // ensures bi-directional consistency
+        }
+    }
 
     private Instant createdAt;
     private Instant updatedAt;
@@ -103,5 +133,8 @@ public class RentProperty {
     public void preUpdate() {
         this.updatedAt = Instant.now();
     }
+
+
+
 
 }

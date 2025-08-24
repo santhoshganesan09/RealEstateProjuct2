@@ -6,6 +6,7 @@ import com.example.RealEstateProjuct.enumClass.AreaUnit;
 import com.example.RealEstateProjuct.enumClass.PropertyType;
 import com.example.RealEstateProjuct.enumClass.RentProperty.RentPeriod;
 import com.example.RealEstateProjuct.enumClass.RentProperty.RentPropertyType;
+import com.example.RealEstateProjuct.mapper.RentMapper.RentDetailsMapper;
 import com.example.RealEstateProjuct.mapper.RentMapper.RentPropertyMapper;
 import com.example.RealEstateProjuct.model.*;
 import com.example.RealEstateProjuct.model.RentProperty.RentPrice;
@@ -26,6 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -36,15 +38,68 @@ public class RentPropertyServiceImpl implements RentPropertyService {
     private final CategoryRepo categoryRepo;
     private final AmenityRepo amenityRepo;
     private final ImageRepo imageRepo;
+    private final RentDetailsMapper rentDetailsMapper;
+
 
     @Override
     public RentPropertyDTO createRentProperty(RentPropertyDTO dto) {
         RentProperty property = new RentProperty();
         mapDtoToEntity(dto, property);
 
-        RentProperty saved = rentPropertyRepository.save(property);
-        return RentPropertyMapper.toDTO(saved);
+        // Map child details without amenities
+        if (dto.getPgDetails() != null) {
+            RentPGDetails pg = rentDetailsMapper.mapPgDetails(dto.getPgDetails());
+            pg.setProperty(property);
+            property.setPgDetails(pg);
+        }
+
+        if (dto.getFlatDetails() != null) {
+            RentFlatDetails flat = rentDetailsMapper.mapFlatDetails(dto.getFlatDetails());
+            flat.setProperty(property);
+            property.setFlatDetails(flat);
+        }
+
+        if (dto.getCommercialDetails() != null) {
+            RentCommercialDetails commercial = rentDetailsMapper.mapCommercialDetails(dto.getCommercialDetails());
+            commercial.setProperty(property);
+            property.setCommercialDetails(commercial);
+        }
+
+
+        // ✅ Save parent property with children but without amenities
+        RentProperty savedProperty = rentPropertyRepository.saveAndFlush(property);
+
+        // Now set amenities after IDs exist
+        if (savedProperty.getPgDetails() != null && dto.getPgDetails() != null
+                && dto.getPgDetails().getAmenities() != null) {
+
+            Set<Amenity> pgAmenities = dto.getPgDetails().getAmenities().stream()
+                    .map(am -> amenityRepo.findById(Long.valueOf(am.get("id").toString()))
+                            .orElseThrow(() -> new RuntimeException("Amenity not found: " + am.get("id"))))
+                    .collect(Collectors.toSet());
+
+            savedProperty.getPgDetails().setAmenities(pgAmenities);
+        }
+
+
+        if (savedProperty.getFlatDetails() != null && dto.getFlatDetails() != null
+                && dto.getFlatDetails().getAmenities() != null) {
+
+            Set<Amenity> flatAmenities = dto.getFlatDetails().getAmenities().stream()
+                    .map(am -> amenityRepo.findById(Long.valueOf(am.get("id").toString()))
+                            .orElseThrow(() -> new RuntimeException("Amenity not found: " + am.get("id"))))
+                    .collect(Collectors.toSet());
+
+            savedProperty.getFlatDetails().setAmenities(flatAmenities);
+        }
+
+
+        // Save again to persist amenities
+        savedProperty = rentPropertyRepository.save(savedProperty);
+
+        return RentPropertyMapper.toDTO(savedProperty);
     }
+
 
     @Override
     public RentPropertyDTO getRentPropertyById(Long id) {
@@ -66,9 +121,26 @@ public class RentPropertyServiceImpl implements RentPropertyService {
         RentProperty property = rentPropertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("RentProperty not found with ID: " + id));
 
+        // Map DTO to entity
         mapDtoToEntity(dto, property);
-        RentProperty updated = rentPropertyRepository.save(property);
-        return RentPropertyMapper.toDTO(updated);
+
+        // Save main property first to generate IDs for Flat/PG details if new
+        RentProperty savedProperty = rentPropertyRepository.save(property);
+
+        // Persist Flat amenities if present
+        if (savedProperty.getFlatDetails() != null && savedProperty.getFlatDetails().getAmenities() != null) {
+            savedProperty.getFlatDetails().setAmenities(savedProperty.getFlatDetails().getAmenities());
+        }
+
+        // Persist PG amenities if present
+        if (savedProperty.getPgDetails() != null && savedProperty.getPgDetails().getAmenities() != null) {
+            savedProperty.getPgDetails().setAmenities(savedProperty.getPgDetails().getAmenities());
+        }
+
+        // Save again to persist Many-to-Many join tables
+        savedProperty = rentPropertyRepository.save(savedProperty);
+
+        return RentPropertyMapper.toDTO(savedProperty);
     }
 
     @Override
@@ -251,6 +323,7 @@ public class RentPropertyServiceImpl implements RentPropertyService {
         }
 
 
+
         // Flat details
         if (dto.getFlatDetails() != null) {
             RentFlatDetails flat = new RentFlatDetails();
@@ -260,18 +333,18 @@ public class RentPropertyServiceImpl implements RentPropertyService {
             flat.setFloorNo(dto.getFlatDetails().getFloorNo());
             flat.setTotalFloors(dto.getFlatDetails().getTotalFloors());
             flat.setBalconies(dto.getFlatDetails().getBalconies());
+            flat.setProperty(property);
 
-            // Handle amenities properly (convert List<Map<String,Object>> to List<String>)
+            // Flat amenities
             if (dto.getFlatDetails().getAmenities() != null) {
-                List<String> flatAmenities = dto.getFlatDetails().getAmenities().stream()
-                        .map(amMap -> amMap.get("name").toString()) // extract the "name"
-                        .collect(Collectors.toList());
+                Set<Amenity> flatAmenities = dto.getFlatDetails().getAmenities().stream()
+                        .map(am -> amenityRepo.findById(Long.valueOf(am.get("id").toString()))
+                                .orElseThrow(() -> new RuntimeException("Amenity not found")))
+                        .collect(Collectors.toSet());
                 flat.setAmenities(flatAmenities);
-            } else {
-                flat.setAmenities(Collections.emptyList());
             }
 
-            flat.setProperty(property);
+
             property.setFlatDetails(flat);
         }
 
@@ -286,22 +359,22 @@ public class RentPropertyServiceImpl implements RentPropertyService {
             pg.setFurnishingStatus(dto.getPgDetails().getFurnishingStatus());
             pg.setTotalCapacity(dto.getPgDetails().getTotalCapacity());
             pg.setBedrooms(dto.getPgDetails().getBedrooms());
+            pg.setProperty(property);
 
-            // Map amenities properly to List<String>
+            // PG amenities
             if (dto.getPgDetails().getAmenities() != null) {
-                List<String> pgAmenities = dto.getPgDetails().getAmenities().stream()
-                        .map(amMap -> {
-                            Long id = Long.valueOf(amMap.get("id").toString());
-                            return amenityRepo.findById(id)
-                                    .orElseThrow(() -> new RuntimeException("Amenity not found with ID: " + id))
-                                    .getName();
-                        })
-                        .collect(Collectors.toList());
+                Set<Amenity> pgAmenities = dto.getPgDetails().getAmenities().stream()
+                        .map(am -> amenityRepo.findById(Long.valueOf(am.get("id").toString()))
+                                .orElseThrow(() -> new RuntimeException("Amenity not found")))
+                        .collect(Collectors.toSet());
                 pg.setAmenities(pgAmenities);
-
-                pg.setProperty(property);
-                property.setPgDetails(pg);
             }
+
+            property.setPgDetails(pg);
+
+
+        }
+
 
             // Commercial details
             if (dto.getCommercialDetails() != null) {
@@ -325,4 +398,4 @@ public class RentPropertyServiceImpl implements RentPropertyService {
 
 
     }
-}
+

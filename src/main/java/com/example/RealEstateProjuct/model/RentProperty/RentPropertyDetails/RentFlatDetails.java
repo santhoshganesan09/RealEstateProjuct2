@@ -1,15 +1,15 @@
 package com.example.RealEstateProjuct.model.RentProperty.RentPropertyDetails;
 
 
+import com.example.RealEstateProjuct.model.Amenity;
 import com.example.RealEstateProjuct.model.RentProperty.RentProperty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.util.List;
+import java.util.HashSet;
+
+import java.util.Set;
 
 @Entity
 @Data
@@ -28,16 +28,19 @@ public class RentFlatDetails {
     private Integer totalFloors;
     private Integer balconies;
 
-    @ElementCollection
-    @CollectionTable(name = "rent_flat_amenities", joinColumns = @JoinColumn(name = "flat_id"))
-    @Column(name = "amenity")
-    private List<String> amenities;
 
     @OneToOne
     @JoinColumn(name = "property_id", nullable = false)
     @JsonIgnore
     private RentProperty property;
 
+    @ManyToMany
+    @JoinTable(
+            name = "rent_flat_amenities",
+            joinColumns = @JoinColumn(name = "flat_id"),
+            inverseJoinColumns = @JoinColumn(name = "amenity_id")
+    )
+    private Set<Amenity> amenities = new HashSet<>();
 
 
 }

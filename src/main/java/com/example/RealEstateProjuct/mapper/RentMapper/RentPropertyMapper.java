@@ -61,6 +61,7 @@ public class RentPropertyMapper {
                         builder.flatDetails(toFlatDetailsDTO(rentProperty.getFlatDetails()));
                         break;
                     case "PG":
+                    case "PG_HOSTEL":
                         builder.pgDetails(toPGDetailsDTO(rentProperty.getPgDetails()));
                         break;
                     case "COMMERCIAL":
@@ -152,15 +153,28 @@ public class RentPropertyMapper {
         }
 
         // Amenities
+//        if (dto.getAmenities() != null) {
+//            Set<Amenity> amenities = dto.getAmenities().stream().map(am -> {
+//                Amenity amenity = new Amenity();
+//                amenity.setId((Long) am.get("id"));
+//                amenity.setName((String) am.get("name"));
+//                return amenity;
+//            }).collect(Collectors.toSet());
+//            rentProperty.setAmenities(amenities);
+//        }
+
+        // Amenities (COMMON for RentProperty)
         if (dto.getAmenities() != null) {
-            Set<Amenity> amenities = dto.getAmenities().stream().map(am -> {
-                Amenity amenity = new Amenity();
-                amenity.setId((Long) am.get("id"));
-                amenity.setName((String) am.get("name"));
-                return amenity;
-            }).collect(Collectors.toSet());
+            Set<Amenity> amenities = dto.getAmenities().stream()
+                    .map(am -> {
+                        Long id = Long.valueOf(am.get("id").toString());
+                        return amenityRepo.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Amenity not found: " + id));
+                    })
+                    .collect(Collectors.toSet());
             rentProperty.setAmenities(amenities);
         }
+
 
         // Tags
         if (dto.getTags() != null) {
@@ -178,21 +192,19 @@ public class RentPropertyMapper {
             details.setTotalFloors(dto.getFlatDetails().getTotalFloors());
             details.setBalconies(dto.getFlatDetails().getBalconies());
 
-            // Map amenities from ID to name
-            if (dto.getFlatDetails().getAmenities() != null) {
-                List<String> flatAmenities = dto.getFlatDetails().getAmenities().stream()
-                        .map(am -> {
-                            Long id = Long.valueOf(am.get("id").toString());
-                            Amenity amenity = amenityRepo.findById(id)
-                                    .orElseThrow(() -> new RuntimeException("Amenity not found: " + id));
-                            return amenity.getName();
-                        })
-                        .collect(Collectors.toList());
-                details.setAmenities(flatAmenities);
-            }
-
             details.setProperty(rentProperty);
             rentProperty.setFlatDetails(details);
+
+            if (dto.getFlatDetails().getAmenities() != null) {
+                Set<Amenity> flatAmenities = dto.getFlatDetails().getAmenities().stream()
+                        .map(am -> {
+                            Long id = Long.valueOf(am.get("id").toString());
+                            return amenityRepo.findById(id)
+                                    .orElseThrow(() -> new RuntimeException("Amenity not found: " + id));
+                        })
+                        .collect(Collectors.toSet());
+                details.setAmenities(flatAmenities);
+            }
         }
 
         // PG Details
@@ -208,21 +220,21 @@ public class RentPropertyMapper {
             details.setTotalCapacity(dto.getPgDetails().getTotalCapacity());
             details.setBedrooms(dto.getPgDetails().getBedrooms());
 
+            details.setProperty(rentProperty);
+            rentProperty.setPgDetails(details);
+
             // Map amenities from ID to name
             if (dto.getPgDetails().getAmenities() != null) {
-                List<String> pgAmenities = dto.getPgDetails().getAmenities().stream()
+                Set<Amenity> pgAmenities = dto.getPgDetails().getAmenities().stream()
                         .map(am -> {
                             Long id = Long.valueOf(am.get("id").toString());
-                            Amenity amenity = amenityRepo.findById(id)
+                            return amenityRepo.findById(id)
                                     .orElseThrow(() -> new RuntimeException("Amenity not found: " + id));
-                            return amenity.getName();
                         })
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toSet());
                 details.setAmenities(pgAmenities);
             }
 
-            details.setProperty(rentProperty);
-            rentProperty.setPgDetails(details);
         }
 
         // Commercial Details
@@ -321,16 +333,16 @@ public class RentPropertyMapper {
     private static RentFlatDetailsDTO toFlatDetailsDTO(RentFlatDetails details) {
         if (details == null) return null;
 
-        List<Map<String, Object>> amenities = details.getAmenities() != null
+        Set<Map<String, Object>> amenities = details.getAmenities() != null
                 ? details.getAmenities().stream()
-                .map(name -> {
+                .map(a -> {
                     Map<String, Object> map = new HashMap<>();
-                    // Ideally, you also store ID in entity; here we use -1 as placeholder
-                    map.put("id", -1);
-                    map.put("name", name);
+                    map.put("id", a.getId());
+                    map.put("name", a.getName());
                     return map;
-                }).collect(Collectors.toList())
-                : Collections.emptyList();
+                })
+                .collect(Collectors.toSet()) // <-- use Set instead of List
+                : Collections.emptySet();
 
 
         return RentFlatDetailsDTO.builder()
@@ -349,17 +361,16 @@ public class RentPropertyMapper {
         if (details == null) return null;
 
 
-        // Convert amenities (List<String>) to List<Map<String, Object>> for DTO
-        List<Map<String, Object>> amenities = details.getAmenities() != null
+        Set<Map<String, Object>> amenities = details.getAmenities() != null
                 ? details.getAmenities().stream()
-                .map(name -> {
+                .map(a -> {
                     Map<String, Object> map = new HashMap<>();
-                    map.put("id", -1); // Placeholder ID, replace if you have actual IDs
-                    map.put("name", name);
+                    map.put("id", a.getId());
+                    map.put("name", a.getName());
                     return map;
                 })
-                .collect(Collectors.toList())
-                : Collections.emptyList();
+                .collect(Collectors.toSet()) // <-- use Set instead of List
+                : Collections.emptySet();
 
 
         return RentPGDetailsDTO.builder()
